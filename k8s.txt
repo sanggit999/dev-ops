@@ -1,0 +1,48 @@
+- Tại sao Docker là chưa đủ?
+	- Giả sử chạy 5 microservice Quiz App bằng lệnh docker run trên 1 máy chủ VPS
+		- Sự cố giữa đêm
+			- Container bị Crash, Ai là người phát hiện và tự động khởi động lại( Docker không tự điều phối xuyên suốt máy)
+		- Bùng nổ lưu lượng
+			- 5000 thí sinh ùa vào thì làm sao tự nhân bản 2->10 container và chia đều tải(Load Balancing)
+		- Nâng cấp phiên bản
+			- Cập nhật code mới. Làm sao đề bài thi của thí sinh đang làm không bị ngắt quãng dù chỉ giây
+
+- Bản chất của K8S
+	- Thuyền trưởng:
+		- Giám sát liên tục (Monitoring trạng thái hàng ngàn container)
+		- Tự co giãn (Auto-scaling theo lượng traffic thực tế)
+		- Tự phục hồi (Self-healing khi có lỗi xảy ra)
+		- Cân bằng tải (Load Balancing xuyên suốt cụm máy chủ)
+
+- Kiến trúc tổng quát của cụm K8S
+	- DevOps (Gõ lệnh kubectl)
+		- Control plane (Bộ não điều khiển) 
+			- kube-apiserver
+			- kube-scheduler (Có nhiệm vụ là liên tục lắng nghe Api server để phát hiện là cái port nào chưa gắn vào node nào hay không, nếu chưa có thằng scheduler sẽ gửi bản ghi binding lên kube-apiserver để tên cái node đó vào bên trong thằng port. Thằng kube-scheduler có nhiệm vụ ra quyết định cho cái Ông port nào được nằm vào trong node nào)
+			- etcd (Nơi chứa các cấu hình và các tham số của cụm K8S và nó lưu trữ dưới dạng key-value)
+			- kube-controller-manager ( Trong cụm K8S có thể có rất nhiều các container chuyên biệt khác nhau và mỗi thằng thưc hiện một cái phụ trách một cái tài nguyên khác nhau, thay vì Mình để mỗi controller thì sẽ gom hết vào một kube-controller-manager một tiến trình thôi(chẳng hạn chúng ta có node controller để quản lý sức khoẻ của các worker note ở bên dưới), chúng ta có relicaset và relication controller để đảm bảo đúng cái số lượng port được tạo ra. Chúng ta có deployment controller để quản lý vòng đời cập nhật các ứng dụng, chúng ta có state fullset và diamondset controller để quản lý các work load đặc biệt và namespace controller để quản lý các namespace( Tức là trong ứng dụng của chúng Ta có nhiều dự án khác nhau và cho mỗi dự án nằm trong một cái namespace khác nhau)
+						- Worker nodes (Máy chủ thực thi)
+							- kubelet ( Đóng vai trò đội trưởng. Anh kubelet nhận lệnh từ kube-apiserver thông quá cấu hình port spect trong đó nó được khái báo là cái pod nào cần chạy những gì và cần bao nhiêu Ram, đại diện của Master nhận lệnh bật/tắt Pod)
+							- Container Runtime ( Phần mềm( Docker/container) chịu trách nhiệm tải Image và chạy thực tế)
+							- kube-proxy (Cân bằng tải mạng, quản lý bảng định tuyến IP nội bộ giữa các Pod)
+							- Pods ( Chúng ta khôg chạy một cái container riêng lẻ mà thay vì đó chúng ta chạy pod và bên trong pod sẽ chứa một hoặc nhiều container(mặc định hiểu 1 pod chứa một container và bên trong cái pod này các container có thể nói chuyện với nhau cùng trùng dải địa chỉ IP, pod mang tính chính tạm thời và xoá, bị huỷ  sau đó được tái tạo lại và địa chỉ IP của pod sẽ được thay đổi) 
+						- Worker nodes (Máy chủ thực thi)
+							- kubelet 
+							- Container Runtime
+							- kube-proxy
+							- Pods	
+- Thiết lập môi trường K8S local
+	- Minikube
+		- Công cụ chính thức tạo cụm K8S đa máy chủ(Multi-node) hoàn chỉnh ngày trên laptop cá nhân thông qua Docker driver giả lập toàn bộ kiến trúc Master/Worker
+		- Khởi động cụm Minikube
+			- minikube start --nodes 2 (2 node) --driver=docker (Chạy nên tảng bằng Docker có sẵn trên máy và Tạo ngay 1 cụm gồm 1 master + 1 worker) --cpus 4 (4 core) --memory 8192( Ram 8GB)
+			- minikube addons enable ingress (Kích hoạt cổng vào mạng cho cụm)
+			- minikube addons enable metrics-server (Kích hoạt hệ thống đo lường CPU/RAM)
+			
+	- Kubectl( Kubernetes Control)
+		- Công cụ dòng lệnh (CLI) tiêu chuẩn trực tiếp nói chuyện với Api Server để điểu khiển toàn bộ cụm.
+
+- Làm quen bộ lệnh Kubectl - giám sát
+	- kubectl get nodes (Xem danh sách toàn bộ máy chủ (Master/Worker) đang hoạt động trong cụm
+	- kubectl get pods -n quiz-app (Xem danh sách toàn bộ các Pod đang chạy trong Namespace quiz-app
+	- kubectl describe pod <tên-pod> -n quiz-app (Xem chi tiết thông số kỹ thuật và lịch sử sự kiện(Events) của một Pod củ thể
