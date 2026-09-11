@@ -1,0 +1,54 @@
+# ==============================================================================
+# BƯỚC 4: BẢN THIẾT KẾ TRIỂN KHAI ỨNG DỤNG (DEPLOYMENT)
+# ==============================================================================
+# TẠI SAO PHẢI CÓ FILE NÀY?
+# - Chúng ta không chạy Pod riêng lẻ (Standalone Pod) vì nếu Pod chết, không ai tự cứu.
+# - Deployment chịu trách nhiệm:
+#     1. Tự động duy trì đủ 3 bản sao Pods (Self-Healing).
+#     2. Cập nhật code mới không gián đoạn dịch vụ dù chỉ 1 giây (Rolling Update).
+#     3. Quay về phiên bản cũ (Rollback) nếu code mới bị lỗi sập.
+#     4. Nạp ConfigMap và Secret vào container dưới dạng biến môi trường (ENV).
+#     5. Giới hạn CPU/RAM để ứng dụng không ngốn hết tài nguyên làm đơ máy tính.
+# ==============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quiz-backend
+  namespace: quiz-app          # Nằm trong phân vùng quiz-app
+  labels:
+    app: quiz-backend
+    tier: backend
+spec:
+  replicas: 3                  # Luôn luôn duy trì 3 bản sao Pod chạy đồng thời
+  selector:
+    matchLabels:
+      app: quiz-backend        # Deployment sẽ giám sát các Pod có nhãn này
+  template:                    # KHUÔN ĐÚC ĐỂ SINH RA MỖI POD
+    metadata:
+      labels:
+        app: quiz-backend      # Dán nhãn này lên mỗi Pod được sinh ra
+        tier: backend
+    spec:
+      containers:
+      - name: quiz-backend-container
+        image: nginx:alpine    # Dùng image Nginx làm đại diện cho service
+        imagePullPolicy: IfNotPresent # Ưu tiên dùng image có sẵn trên máy
+        ports:
+        - containerPort: 80    # Cổng mà ứng dụng bên trong container đang mở
+        
+        # GIỚI HẠN TÀI NGUYÊN (BẮT BUỘC TRONG PRODUCTION):
+        resources:
+          requests:            # Mức tối thiểu cần để Pod khởi động
+            memory: "64Mi"
+            cpu: "50m"         # 50 millicores (0.05 core CPU)
+          limits:              # Mức trần tối đa Pod được phép ăn (tránh OOM làm treo node)
+            memory: "128Mi"
+            cpu: "100m"        # 100 millicores (0.1 core CPU)
+
+        # NẠP TẤT CẢ BIẾN CẤU HÌNH VÀ BẢO MẬT VÀO CONTAINER:
+        envFrom:
+        - configMapRef:
+            name: quiz-config  # Nhúng toàn bộ key-value từ 01-configmap.yaml
+        - secretRef:
+            name: quiz-secret  # Nhúng toàn bộ mật khẩu đã giải mã từ 02-secret.yaml

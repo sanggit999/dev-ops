@@ -1,0 +1,19 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: quiz-backend-hpa
+  namespace: quiz-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: quiz-backend          # Áp dụng cho Deployment quiz-backend
+  minReplicas: 2                # Lúc vắng khách: Giữ tối thiểu 2 Pods
+  maxReplicas: 10               # Lúc bùng nổ: Tự tăng tối đa 10 Pods
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # Khi Metrics-Server báo CPU vượt quá 70% -> TỰ ĐẺ THÊM POD!

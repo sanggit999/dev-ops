@@ -1,0 +1,27 @@
+# ==============================================================================
+# BƯỚC 5: ĐẦU MỐI MẠNG & CÂN BẰNG TẢI (SERVICE)
+# ==============================================================================
+# TẠI SAO PHẢI CÓ FILE NÀY?
+# - Pod mang tính tạm thời (Ephemeral): Khi một Pod bị sập và tạo mới, IP của nó THAY ĐỔI.
+#   Nếu các service khác gọi thẳng vào IP của Pod, hệ thống sẽ gãy ngay lập tức!
+# - Service là giải pháp: Nó cấp một "Địa chỉ ảo cố định" (Virtual IP và Tên miền nội bộ ổn định).
+# - Service tự động theo dõi danh sách 3 Pods phía sau qua nhãn "app: quiz-backend"
+#   và phân phối chia đều lưu lượng (Load Balancing) cho các Pod.
+# ==============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: quiz-backend-service
+  namespace: quiz-app          # BẮT BUỘC: Cùng namespace với các Pod trên
+  labels:
+    app: quiz-backend
+spec:
+  type: NodePort               # Mở cổng trên toàn bộ máy chủ để bên ngoài truy cập được
+  selector:
+    app: quiz-backend          # Tự động gom TẤT CẢ các Pods có nhãn này vào cụm cân bằng tải
+  ports:
+  - protocol: TCP
+    port: 80                   # Cổng ảo của Service (nội bộ trong cụm)
+    targetPort: 80             # Chuyển tiếp lưu lượng vào cổng 80 của container bên trong Pod
+    nodePort: 32100            # Cổng mở ra ngoài máy chủ vật lý (từ dải 30000-32767)

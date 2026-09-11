@@ -1,0 +1,22 @@
+# ==============================================================================
+# BƯỚC 2: CẤU HÌNH BIẾN MÔI TRƯỜNG KHÔNG NHẠY CẢM (CONFIGMAP)
+# ==============================================================================
+# TẠI SAO PHẢI CÓ FILE NÀY?
+# - Nguyên tắc cốt lõi của DevOps (12-Factor App): "Mã nguồn là bất biến, cấu hình là biến động".
+# - Tuyệt đối KHÔNG viết cứng (hardcode) cổng, URL hay chế độ chạy vào bên trong mã nguồn hoặc Dockerfile.
+# - Nhờ ConfigMap, cùng 1 Docker image duy nhất, bạn có thể triển khai:
+#     + Ở môi trường Dev: nạp ConfigMap với APP_ENV="development"
+#     + Ở môi trường Prod: nạp ConfigMap với APP_ENV="production"
+#   mà không cần phải sửa code hay build lại Docker image từ đầu!
+# ==============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: quiz-config
+  namespace: quiz-app          # BẮT BUỘC: Phải nằm trong cùng namespace quiz-app
+data:
+  APP_ENV: "development"
+  PORT: "80"
+  MAX_CONCURRENT_USERS: "5000"
+  LOG_LEVEL: "debug"
