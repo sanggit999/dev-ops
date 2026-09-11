@@ -1,0 +1,18 @@
+# ==============================================================================
+# BƯỚC 1: KHỞI TẠO PHÂN VÙNG ĐỘC LẬP (NAMESPACE)
+# ==============================================================================
+# TẠI SAO PHẢI CÓ FILE NÀY?
+# - Nếu không có Namespace, toàn bộ Pods, Services sẽ bị ném chung vào vùng "default".
+#   Khi bạn có nhiều dự án hoặc nhiều môi trường, chúng sẽ đè lên nhau, rất dễ xóa nhầm.
+# - Namespace đóng vai trò như một "căn phòng riêng biệt". Mọi tài nguyên của dự án
+#   Quiz App sẽ chỉ nằm gọn trong phòng này. Khi không cần nữa, chỉ cần xóa Namespace
+#   này là toàn bộ dự án sạch bóng 100%, không để lại rác trong cụm.
+# ==============================================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: quiz-app
+  labels:
+    environment: development
+    project: quiz-system

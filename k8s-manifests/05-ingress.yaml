@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: quiz-ingress
+  namespace: quiz-app
+  annotations:
+    # Báo cho K8s biết: Hãy dùng bộ điều khiển Nginx để xử lý luật này
+    kubernetes.io/ingress.class: "nginx"
+    # Tắt SSL redirect trên môi trường dev nội bộ (khi chưa gắn chứng chỉ SSL)
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: quiz-app.com            # Tên miền ảo mong muốn
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: quiz-backend-service   # Chuyển tiếp vào Service này
+            port:
+              number: 80                 # Cổng của Service
